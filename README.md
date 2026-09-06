@@ -58,7 +58,7 @@ Tied scores retain catalog order. `top_k` larger than the catalog returns all im
 
 Dish labels are returned for inspection but never fed into the encoder or ranking.
 The held-out query images are never indexed. This implements the initial search
-baseline; the 60-query metric evaluation and three-failure analysis are future work.
+baseline and 60-query metric evaluation; the three-failure analysis is future work.
 Visual resemblance alone may miss ingredients and confuse similar soups or cakes;
 one successful example is not a measure of overall quality.
 
@@ -67,6 +67,25 @@ one successful example is not a measure of overall quality.
 ```bash
 uv run python -m unittest discover -s tests -v
 ```
+
+## Evaluate all 60 queries
+
+```bash
+uv run evaluate.py
+```
+
+Loads the model/index once and searches every image in `queries.csv`. Saves
+`artifacts/evaluation/summary.json` (mean metrics), `per_query.csv` (individual
+metrics), and `results.json` (ranked matches, scores, and relevance).
+Use `--dataset`, `--index`, or `--out` to override paths. For a cached offline
+run, prefix the command with `HF_HUB_OFFLINE=1`.
+
+Precision@5 is relevant hits divided by 5. Recall@5 divides hits by the matching
+label's catalog count (100 here, so its maximum is 0.05). NDCG@5 discounts binary
+relevance by `1 / log2(rank + 1)` and divides by ideal DCG (about 2.948 here).
+Each reported number is the arithmetic mean across queries. These metrics measure
+label matching, not ingredient suitability, user intent, latency, or score calibration.
+Averages can hide poor classes and individual failures, especially with only 60 queries.
 
 ## Engineering notes
 
