@@ -1,0 +1,5 @@
+.cache/
+.venv/
+__pycache__/
+artifacts/
+food_search_dataset/
