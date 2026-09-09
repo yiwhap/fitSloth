@@ -51,7 +51,7 @@ def rank(vectors, query, top_k):
 
 
 class Encoder:
-    def __init__(self, model=MODEL, revision=None):
+    def __init__(self, model=MODEL, revision=None, projection=None):
         import torch
         from transformers import CLIPImageProcessor, CLIPVisionModelWithProjection
 
@@ -64,6 +64,12 @@ class Encoder:
         self.model = CLIPVisionModelWithProjection.from_pretrained(
             model, attn_implementation="eager", **options)
         self.model.to(self.device).eval()
+        if projection is not None:
+            weight = np.load(projection, allow_pickle=False)
+            if weight.shape != tuple(self.model.visual_projection.weight.shape) or not np.isfinite(weight).all():
+                raise ValueError("Invalid fine-tuned projection")
+            with torch.no_grad():
+                self.model.visual_projection.weight.copy_(torch.from_numpy(weight))
         self.revision = self.model.config._commit_hash
         print(f"Encoder: {model} on {self.device}", file=sys.stderr)
 
@@ -117,7 +123,13 @@ class ImageSearch:
             raise ValueError("Catalog changed; rebuild the index")
         if self.vectors.ndim != 2 or len(self.vectors) != len(self.rows):
             raise ValueError("Invalid index dimensions; rebuild the index")
-        self.encoder = Encoder(metadata["model"], metadata["revision"])
+        projection = None
+        if "projection" in metadata:
+            projection = Path(index).resolve().parent / metadata["projection"]
+            if hashlib.sha256(projection.read_bytes()).hexdigest() != metadata["projection_sha256"]:
+                raise ValueError("Fine-tuned projection changed; rebuild the index")
+        self.metadata = metadata
+        self.encoder = Encoder(metadata["model"], metadata["revision"], projection)
 
     def search_image(self, image_path, top_k=5):
         if top_k < 1:

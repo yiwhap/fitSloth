@@ -54,6 +54,8 @@ def evaluate(dataset=DATASET, index=INDEX, out=ROOT / "artifacts/evaluation"):
         **{metric: sum(row[metric] for row in per_query) / len(per_query) for metric in METRICS},
         "model": search.encoder.model.config._name_or_path,
         "model_revision": search.encoder.revision,
+        "projection_sha256": search.metadata.get("projection_sha256"),
+        "catalog_fingerprint": search.metadata["fingerprint"],
         "catalog_images_per_label": dict(sorted(counts.items())),
         "limitations": [
             "Labels do not measure ingredient, preparation, or dietary suitability.",
