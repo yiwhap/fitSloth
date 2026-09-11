@@ -13,7 +13,7 @@ from PIL import Image, ImageDraw, ImageOps
 
 ROOT = Path(__file__).resolve().parent
 DATASET = ROOT / "food_search_dataset"
-INDEX = ROOT / "artifacts/catalog.npz"
+INDEX = ROOT / "outputs/catalog.npz"
 MODEL = "openai/clip-vit-base-patch32"
 CACHE = ROOT / ".cache/huggingface"
 

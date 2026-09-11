@@ -14,8 +14,8 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from evaluate import METRICS, evaluate, metrics_at_5
-from food_search import DATASET, INDEX, ROOT, Encoder, catalog, fingerprint, normalize
+from evaluate_search import METRICS, evaluate, metrics_at_5
+from image_search import DATASET, INDEX, ROOT, Encoder, catalog, fingerprint, normalize
 
 
 def dump(path, value):
@@ -221,7 +221,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--dataset', type=Path, default=DATASET)
     p.add_argument('--index', type=Path, default=INDEX)
-    p.add_argument('--out', type=Path, default=ROOT / 'artifacts/finetuned_clip')
+    p.add_argument('--out', type=Path, default=ROOT / 'outputs/tuned')
     p.add_argument('--epochs', type=int, default=30)
     p.add_argument('--lr', type=float, default=.001)
     p.add_argument('--seed', type=int, default=42)

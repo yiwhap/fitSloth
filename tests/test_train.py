@@ -3,7 +3,7 @@ import numpy as np
 import torch
 
 from finetune_clip import split_catalog, supervised_contrastive, retrieval_metrics
-from food_search import normalize
+from image_search import normalize
 
 
 class FineTuneTests(unittest.TestCase):

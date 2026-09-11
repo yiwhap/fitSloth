@@ -6,8 +6,8 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
-from evaluate import metrics_at_5
-from food_search import DATASET, ROOT
+from evaluate_search import metrics_at_5
+from image_search import DATASET, ROOT
 
 
 def select_cases(rows, all_failures=False):
@@ -105,16 +105,16 @@ def export_cases(results_path, dataset, out, all_failures=False):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--results', type=Path, default=ROOT / 'artifacts/evaluation/results.json')
+    parser.add_argument('--results', type=Path, default=ROOT / 'outputs/eval/results.json')
     parser.add_argument('--dataset', type=Path, default=DATASET)
-    parser.add_argument('--out', type=Path, default=ROOT / 'artifacts/cases')
+    parser.add_argument('--out', type=Path, default=ROOT / 'outputs/cases')
     parser.add_argument('--all-failures', action='store_true',
                         help='Export every wrong top-1 result instead of only three')
     args = parser.parse_args()
     try:
         selected = export_cases(args.results, args.dataset, args.out, args.all_failures)
     except (OSError, ValueError, KeyError) as exc:
-        parser.exit(1, f'Error: {exc}. Run uv run evaluate.py first if results are missing.\n')
+        parser.exit(1, f'Error: {exc}. Run uv run evaluate_search.py first if results are missing.\n')
     for category, cases in selected.items():
         print(f"{category}: " + ', '.join(q['query_id'] for q in cases))
     print(f'Report: {args.out.resolve() / "report.md"}')

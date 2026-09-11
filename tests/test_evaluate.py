@@ -1,6 +1,6 @@
 import math
 import unittest
-from evaluate import metrics_at_5
+from evaluate_search import metrics_at_5
 
 
 def results(labels):

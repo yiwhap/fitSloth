@@ -7,7 +7,7 @@ import math
 from pathlib import Path
 import sys
 
-from food_search import DATASET, INDEX, ROOT, ImageSearch
+from image_search import DATASET, INDEX, ROOT, ImageSearch
 
 METRICS = ("precision@5", "recall@5", "ndcg@5")
 
@@ -27,7 +27,7 @@ def metrics_at_5(results, true_label, relevant_in_catalog):
             "ndcg@5": dcg / ideal_dcg}
 
 
-def evaluate(dataset=DATASET, index=INDEX, out=ROOT / "artifacts/evaluation"):
+def evaluate(dataset=DATASET, index=INDEX, out=ROOT / "outputs/eval"):
     dataset, index, out = Path(dataset), Path(index), Path(out)
     with (dataset / "queries.csv").open(newline="", encoding="utf-8") as f:
         queries = list(csv.DictReader(f))
@@ -79,7 +79,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset", type=Path, default=DATASET)
     parser.add_argument("--index", type=Path, default=INDEX)
-    parser.add_argument("--out", type=Path, default=ROOT / "artifacts/evaluation")
+    parser.add_argument("--out", type=Path, default=ROOT / "outputs/eval")
     args = parser.parse_args()
     try:
         summary = evaluate(args.dataset, args.index, args.out)

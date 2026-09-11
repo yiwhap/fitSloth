@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from food_search import normalize, rank
+from image_search import normalize, rank
 
 
 class RankingTests(unittest.TestCase):

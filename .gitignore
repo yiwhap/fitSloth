@@ -1,5 +1,7 @@
 .cache/
 .venv/
 __pycache__/
-artifacts/
+outputs/
 food_search_dataset/
+
+.DS_Store
