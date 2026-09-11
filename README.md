@@ -28,21 +28,67 @@ supplied food examples when recording the demonstration.
 
 ## Setup
 
-Run commands from the project root. Requirements: **Python 3.11** and **uv**.
-Dependencies are pinned in `uv.lock`; inference runs on CPU.
+Use **Python 3.11** and **uv**. Dependencies are pinned in `uv.lock`; inference
+runs on CPU. Follow the setup for your operating system, then use the shared
+commands below. The Windows examples use **PowerShell**, not Command Prompt.
+
+### macOS — Terminal (zsh or bash)
 
 If uv is not installed:
 
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 export PATH="$HOME/.local/bin:$PATH"
+uv --version
 ```
 
-Install dependencies:
+Go to your checkout. This example assumes it is on your Desktop; replace the path
+if you saved it elsewhere:
 
 ```bash
-uv sync --locked
+cd "$HOME/Desktop/fitSloth"
 ```
+
+### Windows — PowerShell
+
+Install uv with WinGet, then close and reopen PowerShell so PATH is refreshed:
+
+```powershell
+winget install --id=astral-sh.uv -e
+```
+
+In the new PowerShell window:
+
+```powershell
+uv --version
+Set-Location "$HOME\Desktop\fitSloth"
+```
+
+Replace the checkout path if needed, including when Desktop is under OneDrive.
+If WinGet is unavailable, use the Windows standalone installer documented in the
+[official uv installation guide](https://docs.astral.sh/uv/getting-started/installation/).
+That guide also documents the macOS installer.
+
+### Shared setup — macOS and Windows
+
+Install Python 3.11 and create the project's environment:
+
+```bash
+uv python install 3.11
+uv sync --locked --python 3.11
+uv run python --version
+```
+
+The last command should report Python 3.11.x. uv can manage Python itself; see the
+[official Python installation guide](https://docs.astral.sh/uv/guides/install-python/).
+All subsequent `uv run ...` commands work with the same syntax in macOS Terminal
+and Windows PowerShell. Forward slashes in paths passed to these Python scripts
+work on both systems. Keep quotes around paths containing spaces.
+
+The application has been exercised on macOS Apple Silicon. Windows instructions
+are provided for Windows x64, but this project has not been run on Windows in this
+session; identical numerical results across platforms are not guaranteed.
+Do not copy `.venv` between machines or operating systems; create it with `uv sync`.
 
 uv manages `.venv`; you do not need to activate it. Initial dataset and model downloads require internet access. If the supplied dataset and saved model indexes are already present, go directly to **Launch the UI**.
 
@@ -104,13 +150,13 @@ Then open [http://127.0.0.1:8001](http://127.0.0.1:8001).
 
 ### Editing the UI
 
-Edit `ui/index.html`, save the file, and refresh the browser (Cmd+R on macOS).
+Edit `ui/index.html`, save the file, and refresh the browser (Cmd+R on macOS; Ctrl+R on Windows).
 The server reads this file on each page request and disables caching, but does not
 automatically reload an already-open page. The static comparison report at
 `outputs/compare/index.html` is a separate page.
 
 Startup prints the local URL on its own line and the exact HTML path. Click the
-URL in terminals that support links (some require Cmd+click). To open the default
+URL in terminals that support links (often Cmd+click on macOS or Ctrl+click in Windows Terminal). To open the default
 browser automatically:
 
 ```bash
@@ -311,6 +357,18 @@ were inspected during development and are not a pristine unseen test.
 
 Open the [comparison report](outputs/compare/index.html) or
 [summary CSV](outputs/compare/summary.csv) after generating or receiving the outputs.
+To open the generated HTML report from macOS Terminal:
+
+```bash
+open outputs/compare/index.html
+```
+
+From Windows PowerShell:
+
+```powershell
+Invoke-Item .\outputs\compare\index.html
+```
+
 The report shows crops, detections, rankings, and the winning input per result.
 Expand **Cosine from every input** to inspect score selection. This is score
 provenance, not an attention map. `manifest.json` records seeds and detections;
@@ -422,14 +480,36 @@ uv run python -m unittest discover -s tests -v
 | `outputs/audit/` | Dataset inspection notes and contact sheets |
 | `.cache/` | Model and package caches |
 
-- **`uv: command not found`:** use `~/.local/bin/uv` or add `$HOME/.local/bin` to PATH.
+- **uv is not found:** on macOS, use `~/.local/bin/uv` or add `$HOME/.local/bin`
+  to PATH. On Windows, reopen PowerShell after installation and check `Get-Command uv`;
+  follow the installer output if a custom installation directory was used.
 - **Missing index:** run `uv run image_search.py build`; fine-tuned search also
   needs `uv run finetune_clip.py` or the saved trained artifacts.
 - **Output folder exists:** use a new `--out`; comparison also supports `--resume`.
 - **Catalog/projection mismatch:** use matching data, weights, and index. For an
   intentionally changed catalog, rebuild the index and train a new model.
-- **Offline loading:** after weights are cached, prefix commands with
-  `HF_HUB_OFFLINE=1`. This controls Hugging Face loading, not YOLO or dataset downloads.
+- **Offline loading:** after weights are cached, use the platform-specific commands
+  below. This controls Hugging Face loading, not YOLO or dataset downloads.
+
+Offline example on macOS (the variable applies to this command only):
+
+```bash
+HF_HUB_OFFLINE=1 uv run search_ui.py --open
+```
+
+Offline example on Windows PowerShell (the variable remains in this terminal
+session until removed):
+
+```powershell
+$env:HF_HUB_OFFLINE = "1"
+uv run search_ui.py --open
+```
+
+After stopping the server with Ctrl+C, restore online Hugging Face loading:
+
+```powershell
+Remove-Item Env:HF_HUB_OFFLINE
+```
 
 Keep `projection.npy` beside the fine-tuned index and retain `transform.npy` for
 comparison. The dataset, outputs, caches, and `.venv` are excluded from Git. A fresh
