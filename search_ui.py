@@ -70,7 +70,7 @@ class SearchApp:
         detections = []
         views = [{'label': 'Full image', 'file': 'full.png', 'image': image}]
         if method == 'random':
-            views = [{'label': f'Random trial {j+1}', 'file': f'random_{j}.png',
+            views = [{'label': f'Random crop {j+1}', 'file': f'random_{j}.png',
                       'box': box, 'image': image.crop(box)}
                      for j, box in enumerate(sample_boxes(image.size, 5, np.random.default_rng(seed)))]
         elif method in {'yolo', 'full_yolo'}:
@@ -191,8 +191,7 @@ def main():
         if exc.errno != errno.EADDRINUSE:
             raise
         parser.exit(1, f'Port {args.port} is already in use.\n'
-                    f'If FitSloth is already running, open http://127.0.0.1:{args.port}\n'
-                    'Otherwise choose another port: uv run search_ui.py --port 8001\n')
+                    f'If the app is already running, open http://127.0.0.1:{args.port}\n')
     url = f'http://127.0.0.1:{server.server_port}/'
     print(f'\nFitSloth is running\n\n{url}\n\n'
           f'HTML: {ROOT / "ui/index.html"}\n'

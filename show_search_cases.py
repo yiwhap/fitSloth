@@ -10,7 +10,7 @@ from evaluate_search import metrics_at_5
 from image_search import DATASET, ROOT
 
 
-def select_cases(rows, all_failures=False):
+def select_cases(rows, all_failures=False, failure_queries=None):
     """Rank by label relevance, then NDCG; cosine only breaks best-case ties."""
     scored = []
     for row in rows:
@@ -21,7 +21,14 @@ def select_cases(rows, all_failures=False):
                                          -q['results'][0]['score'], q['query_id']))[:3]
     failures = sorted((q for q in scored if q['results'][0]['dish_label'] != q['true_label']),
                       key=lambda q: (q['precision@5'], q['ndcg@5'], q['query_id']))
-    if not all_failures:
+    if failure_queries is not None:
+        if all_failures or len(failure_queries) != 3 or len(set(failure_queries)) != 3:
+            raise ValueError('Choose three distinct failure queries, without --all-failures')
+        by_id = {q['query_id']: q for q in failures}
+        if any(qid not in by_id for qid in failure_queries):
+            raise ValueError('Each selected query must exist and have a wrong top-1 label')
+        failures = [by_id[qid] for qid in failure_queries]
+    elif not all_failures:
         failures = failures[:3]
     if len(best) < 3 or (not all_failures and len(failures) < 3):
         raise ValueError('Need at least three queries and three top-1 label failures')
@@ -55,14 +62,15 @@ def render_case(query, dataset, destination, category):
     return canvas
 
 
-def export_cases(results_path, dataset, out, all_failures=False):
+def export_cases(results_path, dataset, out, all_failures=False, failure_queries=None):
     rows = json.loads(results_path.read_text())
-    selected = select_cases(rows, all_failures)
+    selected = select_cases(rows, all_failures, failure_queries)
     out.mkdir(parents=True, exist_ok=True)
     report = [f"# CLIP: three best and {len(selected['failure'])} failure cases", '',
               'Correctness means matching the supplied dish label. Failures have a wrong top-1 label.',
-              'Best: descending Precision@5, then NDCG@5, then top-1 cosine. '
-              'Failures: ascending Precision@5, then NDCG@5. Final ties use query ID.',
+              'Best: descending Precision@5, then NDCG@5, then top-1 cosine. ' +
+              ('Failures: explicitly selected query IDs, in the supplied order.' if failure_queries else
+               'Failures: ascending Precision@5, then NDCG@5. Final ties use query ID.'),
               'Selections are global; multiple queries may share a dish. '
               'Cosine is not a probability. These selected extremes do not represent average performance.', '',
               f"Source: `{results_path.resolve()}` ({len(rows)} queries).", '']
@@ -110,9 +118,11 @@ def main():
     parser.add_argument('--out', type=Path, default=ROOT / 'outputs/cases')
     parser.add_argument('--all-failures', action='store_true',
                         help='Export every wrong top-1 result instead of only three')
+    parser.add_argument('--failure-queries', nargs=3, metavar='QUERY_ID',
+                        help='Export three specified wrong-top-1 queries in this order')
     args = parser.parse_args()
     try:
-        selected = export_cases(args.results, args.dataset, args.out, args.all_failures)
+        selected = export_cases(args.results, args.dataset, args.out, args.all_failures, args.failure_queries)
     except (OSError, ValueError, KeyError) as exc:
         parser.exit(1, f'Error: {exc}. Run uv run evaluate_search.py first if results are missing.\n')
     for category, cases in selected.items():

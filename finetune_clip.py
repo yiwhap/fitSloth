@@ -5,7 +5,6 @@ import csv
 import hashlib
 import json
 from pathlib import Path
-import shutil
 import time
 
 import numpy as np
@@ -109,8 +108,8 @@ def train(args):
     if args.out.exists():
         raise ValueError(f'{args.out} already exists; choose a new --out to preserve previous runs')
     torch.set_num_threads(4)
-    torch.manual_seed(args.seed)
-    rng = np.random.default_rng(args.seed)
+    torch.manual_seed(args.train_seed)
+    rng = np.random.default_rng(args.train_seed)
     rows = catalog(args.dataset)
     with np.load(args.index, allow_pickle=False) as f:
         vectors = normalize(f['vectors'])
@@ -122,15 +121,14 @@ def train(args):
         queries = list(csv.DictReader(f))
     args.out.mkdir(parents=True)
     started = time.monotonic()
-    shutil.copy2(args.index, args.out / 'baseline_catalog.npz')
     paths = [args.dataset / 'images' / r['filename'] for r in rows]
     query_paths = [args.dataset / 'queries' / q['filename'] for q in queries]
     groups, pairs = duplicate_groups(paths + query_paths)
-    train_ids, val_ids, excluded = split_catalog(rows, groups[:len(rows)], set(groups[len(rows):]), args.seed)
+    train_ids, val_ids, excluded = split_catalog(rows, groups[:len(rows)], set(groups[len(rows):]), args.split_seed)
     dump(args.out / 'duplicate_audit.json', {'method': 'EXIF-normalized exact pixels or 64-bit dHash distance <= 4',
          'limitation': 'Heuristic grouping can miss duplicates and can group distinct images.', 'pairs': pairs})
     dump(args.out / 'split.json', {
-        'seed': args.seed, 'catalog_fingerprint': metadata['fingerprint'],
+        'seed': args.split_seed, 'split_seed': args.split_seed, 'catalog_fingerprint': metadata['fingerprint'],
         'train': [rows[i]['image_id'] for i in train_ids],
         'validation': [rows[i]['image_id'] for i in val_ids],
         'excluded': [rows[i]['image_id'] for i in excluded],
@@ -172,7 +170,7 @@ def train(args):
             best = transform.weight.detach().clone()
         print(f'Epoch {epoch}/{args.epochs}: loss={np.mean(losses):.4f} validation NDCG@5={metrics["ndcg@5"]:.4f}', flush=True)
     dump(args.out / 'training.json', {'method': 'Constrained projection fine-tuning: W_new = A @ W_original; frozen vision backbone',
-        'epochs': args.epochs, 'seed': args.seed, 'lr': args.lr, 'temperature': .07,
+        'epochs': args.epochs, 'train_seed': args.train_seed, 'split_seed': args.split_seed, 'lr': args.lr, 'temperature': .07,
         'identity_regularization': .01, 'selection': 'Highest validation NDCG@5; ties keep earlier epoch; epoch zero is eligible',
         'best_epoch': best_epoch, 'history': history, 'training_seconds': time.monotonic() - started})
     np.save(args.out / 'transform.npy', best.numpy())
@@ -191,8 +189,11 @@ def train(args):
         projection_sha256=hashlib.sha256((args.out / 'projection.npy').read_bytes()).hexdigest())
     np.savez_compressed(args.out / 'catalog.npz', vectors=updated, metadata=json.dumps(tuned_metadata))
     del encoder
+    if getattr(args, 'skip_evaluation', False):
+        print('Checkpoint saved; evaluation will be performed by the seed study.', flush=True)
+        return
     print('Checkpoint selected. Running final held-out evaluation for both models.', flush=True)
-    baseline_summary = evaluate(args.dataset, args.out / 'baseline_catalog.npz', args.out / 'baseline')
+    baseline_summary = evaluate(args.dataset, args.index, args.out / 'baseline')
     tuned_summary = evaluate(args.dataset, args.out / 'catalog.npz', args.out / 'finetuned')
     comparison = {m: {'baseline': baseline_summary[m], 'finetuned': tuned_summary[m],
                       'delta': tuned_summary[m] - baseline_summary[m]} for m in METRICS}
@@ -224,7 +225,9 @@ def main():
     p.add_argument('--out', type=Path, default=ROOT / 'outputs/tuned')
     p.add_argument('--epochs', type=int, default=30)
     p.add_argument('--lr', type=float, default=.001)
-    p.add_argument('--seed', type=int, default=42)
+    p.add_argument('--train-seed', '--seed', dest='train_seed', type=int, default=42, help='Training batch seed; independent of the split')
+    p.add_argument('--split-seed', type=int, default=42, help='Fixed train/validation split seed')
+    p.add_argument('--skip-evaluation', action='store_true', help='Save checkpoint only; for separately orchestrated evaluation')
     args = p.parse_args()
     train(args)
 

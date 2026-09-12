@@ -6,7 +6,6 @@ import hashlib
 import html
 import json
 from pathlib import Path
-import secrets
 import time
 
 import numpy as np
@@ -104,12 +103,12 @@ def prepare(args, queries):
         if args.out.exists():
             raise ValueError('Output exists: use --resume or choose a new --out')
         args.out.mkdir(parents=True)
-        seed = args.seed if args.seed is not None else secrets.randbits(32)
+        seed = args.seed if args.seed is not None else 42
         manifest = {'seed': seed, 'random_trials': args.random_trials, 'query_hash': query_hash.hexdigest(),
                     'query_ids': [q['query_id'] for q in queries], 'detector': DETECTOR, 'classes': sorted(FOOD_CLASSES),
                     'box_threshold': .25, 'inference_size': 640, 'nms_iou': .5,
                     'min_box_area_fraction': .01, 'random_area': [.25,.9], 'random_aspect': [.75,4/3],
-                    'fusion': {'yolo': 'max across YOLO regions', 'full_yolo': 'max across full image and YOLO regions'},
+                    'fusion': {'random': 'independent crop rankings; mean trial metrics', 'yolo': 'max across YOLO regions', 'full_yolo': 'max across full image and YOLO regions'},
                     'no_detection': 'full-image fallback, explicitly flagged', 'cases': {}}
         dump(manifest_path, manifest)
     detector = None
@@ -140,12 +139,12 @@ def prepare(args, queries):
         dump(manifest_path, manifest)
         print(f'Detected {i+1}/{len(queries)} {qid}: {len(detections)} regions ({elapsed:.1f}s)', flush=True)
     del detector
-    manifest['fusion'] = {'yolo': 'max across YOLO regions', 'full_yolo': 'max across full image and YOLO regions'}
+    manifest['fusion'] = {'random': 'independent crop rankings; mean trial metrics', 'yolo': 'max across YOLO regions', 'full_yolo': 'max across full image and YOLO regions'}
     dump(manifest_path, manifest)
     return manifest
 
 
-def evaluate_models(args, queries, manifest):
+def evaluate_models(args, queries, manifest, embedding_cache=None):
     baseline = ImageSearch(args.dataset, args.baseline)
     tuned = ImageSearch(args.dataset, args.finetuned)
     if baseline.metadata['fingerprint'] != tuned.metadata['fingerprint']:
@@ -157,13 +156,20 @@ def evaluate_models(args, queries, manifest):
     reuse = (transform.shape == (512,512) and
              np.allclose(transform @ original_weight, tuned_weight, atol=2e-5, rtol=2e-4) and
              np.allclose(normalize(baseline.vectors @ transform.T), tuned.vectors, atol=2e-5, rtol=2e-4))
+    cache_identity = (baseline.metadata['model'], baseline.metadata['revision'],
+                      hashlib.sha256(original_weight.tobytes()).hexdigest())
     counts = Counter(r['dish_label'] for r in baseline.rows)
     all_records = []
     for i, q in enumerate(queries):
         qid = q['query_id']; folder = args.out / qid; case = manifest['cases'][qid]
         paths = [folder / 'full.png'] + [folder / f'random_{j}.png' for j in range(args.random_trials)]
         paths += [folder / f'yolo_{j}.png' for j in range(len(case['detections']))]
-        embeddings = np.concatenate([baseline.encoder.encode(paths[j:j+8]) for j in range(0,len(paths),8)])
+        cache_key = (cache_identity, tuple(hashlib.sha256(path.read_bytes()).hexdigest() for path in paths)) if embedding_cache is not None else None
+        embeddings = embedding_cache.get(cache_key) if embedding_cache is not None else None
+        if embeddings is None:
+            embeddings = np.concatenate([baseline.encoder.encode(paths[j:j+8]) for j in range(0,len(paths),8)])
+            if embedding_cache is not None:
+                embedding_cache[cache_key] = embeddings
         tuned_embeddings = normalize(embeddings @ transform.T) if reuse else np.concatenate([
             tuned.encoder.encode(paths[j:j+8]) for j in range(0,len(paths),8)])
         if reuse and i == 0:
@@ -177,8 +183,10 @@ def evaluate_models(args, queries, manifest):
             yolo_views = [{'label': f'YOLO crop {j+1} ({d["label"]})', 'file': f'yolo_{j}.png'}
                           for j, d in enumerate(case['detections'])]
             full = ranked(search, scores[0], scores[:1], full_views)
-            random = [ranked(search, scores[1+j], scores[1+j:2+j],
-                             [{'label': f'Random trial {j+1}', 'file': f'random_{j}.png'}])
+            random_scores = scores[1:1+args.random_trials]
+            random_views = [{'label': f'Random crop {j+1}', 'file': f'random_{j}.png'}
+                            for j in range(args.random_trials)]
+            random = [ranked(search, random_scores[j], random_scores[j:j+1], random_views[j:j+1])
                       for j in range(args.random_trials)]
             yolo_scores = scores[1+args.random_trials:]
             fused = ranked(search, fuse_scores(yolo_scores), yolo_scores, yolo_views) if len(yolo_scores) else full
@@ -195,12 +203,12 @@ def evaluate_models(args, queries, manifest):
                     record['fallback'] = case['fallback'] if method == 'yolo' else False
                     record['no_regions'] = case['fallback']
                     record['includes_full_image'] = method == 'full_yolo'
-                    for region in record['regions'] if method == 'yolo' else []:
+                    for region in record['regions'] if method == 'yolo' and getattr(args, 'write_previews', True) else []:
                         save_preview(folder / f'yolo_{region["region"]}.png', region['results'],
                                      folder / f'{name}_region_{region["region"]}.png')
                 records.append(record)
-                preview_query = paths[1] if method=='random' else paths[0]
-                save_preview(preview_query, result_sets[0], folder / f'{name}_{method}.png')
+                if getattr(args, 'write_previews', True):
+                    save_preview(paths[1] if method == 'random' else paths[0], result_sets[0], folder / f'{name}_{method}.png')
         dump(folder / 'results.json',records)
         all_records.extend(records)
         print(f'Searched {i+1}/{len(queries)} {qid}',flush=True)
@@ -233,9 +241,9 @@ def report(args, queries, manifest, records):
         table+=f'<tr><th>{r["pipeline"]}</th>'+''.join(f'<td>{r[m]:.4f}</td>' for m in METRICS)+'</tr>'
     table+='</table>'
     protocol = (f'{len(queries)} queries. Random seed: {manifest["seed"]}; {args.random_trials} random crops per query, '
-        'with randomly sampled sizes and positions. The same crops are used by both models. Random metrics average all trials, never the best crop. '
+        'with randomly sampled sizes and positions. The same crops are used by both models. Random crops each produce a separate Top-5 ranking; metrics average all crop trials equally. '
         'YOLO crops: maximum cosine across detected regions per catalog candidate. Full + YOLO: maximum cosine across the full image AND all detected regions. Both produce five unique catalog images without label-based view selection. Each result displays its winning input and all input cosine scores. Ties choose the first input (full image first in Full + YOLO, otherwise crop order). Relevance for metrics is determined by the catalog dish label, not the YOLO label. '
-        'No detections: full-image fallback, counted below. The YOLO pipeline has multiple views; random results measure expected single-crop performance, not a compute-matched experiment. '
+        'No detections: full-image fallback, counted below. Random uses five crops; YOLO crop counts vary and detection adds compute. '
         'The YOLO segmentation model supplies boxes and mask contours; retrieval uses unmasked box crops, preserving context. No text prompts or manual boxes are used. Only query images are cropped; both models search the same original catalog. Per-region results are not scored against the whole-photo label, which may describe only one item. '
         'There are no dedicated drink categories in this catalog. These queries were previously inspected; detection quality on fresh multi-item images is not established.')
     doc='''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Eight-way CLIP comparison</title>
@@ -250,14 +258,15 @@ def report(args, queries, manifest, records):
         for model,method,title in titles:
             r=next(r for r in records if r['query_id']==qid and r['model']==model and r['method']==method)
             doc+=f'<details><summary>{title} · '+ ' · '.join(f'{m}: {r[m]:.4f}' for m in METRICS)+'</summary>'
-            if method=='random':doc+='<p>Metrics average all trials equally. Expand each trial below to see its inputs, ranking, and metrics.</p>'
+            if method=='random':doc+='<p>Five separate crop rankings. Metrics average all five trials equally; no best crop is selected.</p>'
             if method=='full_yolo':doc+='<p>Maximum cosine across full image + YOLO crops. The full image is always included.</p>'
             if method=='yolo':doc+='<p>Combined ranking shown first; separate item searches follow. '+('No region detected; used full image.' if case['fallback'] else '')+'</p>'
             for trial, results in enumerate(r['results']):
                 if method == 'random':
                     doc+=f'<details><summary>Random trial {trial+1} · '+ ' · '.join(f'{m}: {r["trials"][trial][m]:.4f}' for m in METRICS)+'</summary>'
                 doc+=ranking_html(results, qid, q['true_label'], args.out)
-                if method == 'random':doc+='</details>' 
+                if method == 'random':
+                    doc+='</details>' 
             if method in ('yolo','full_yolo'):
                 for region in r['regions']:
                     doc+=f'<p>Region {region["region"]+1}: {html.escape(region["detection"]["label"])}</p><img loading="lazy" src="{qid}/{model}_region_{region["region"]}.png">'
@@ -276,7 +285,7 @@ def main():
     p.add_argument('--finetuned',type=Path,default=ROOT/'outputs/tuned/catalog.npz')
     p.add_argument('--out',type=Path,default=ROOT/'outputs/compare')
     p.add_argument('--random-trials',type=int,default=5)
-    p.add_argument('--seed',type=int,help='Omit for fresh random crops; saved to manifest for reproducibility')
+    p.add_argument('--seed',type=int,help='Crop seed for new runs (default: 42); resume keeps the saved seed')
     p.add_argument('--resume',action='store_true',help='Reuse completed detections and crops in this output directory')
     args=p.parse_args()
     if args.random_trials<1:p.error('--random-trials must be positive')

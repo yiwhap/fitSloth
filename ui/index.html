@@ -28,7 +28,7 @@
 </main>
 <script>
 const $=id=>document.getElementById(id);let selected=null,previewURL=null,busy=false,selection=0;
-const hints={full:'One search using the full photo.',full_yolo:'For each catalog image, keep the highest cosine from the full photo and detected crops.',yolo:'Search detected regions and keep the highest cosine per catalog image. If none are detected, use the full photo.',random:'Five fresh crops with random sizes and positions. Each trial has its own Top 5; no best trial is selected.'};
+const hints={full:'One search using the full photo.',full_yolo:'For each catalog image, keep the highest cosine from the full photo and detected crops.',yolo:'Search detected regions and keep the highest cosine per catalog image. If none are detected, use the full photo.',random:'Five fresh crops with random sizes and positions. Each crop has its own Top 5; no best crop is selected.'};
 function hint(){$('method-hint').textContent=hints[$('method').value]}hint();$('method').onchange=hint;
 function status(text,error=false){$('status').textContent=text;$('status').classList.toggle('error',error)}
 function selectFile(file){if(busy)return;if(!file)return;if(file.size>16*1024*1024){status('Choose an image smaller than 16 MB.',true);return}selected=file;selection++;if(previewURL)URL.revokeObjectURL(previewURL);previewURL=URL.createObjectURL(file);$('preview').src=previewURL;$('preview').hidden=false;$('upload-prompt').hidden=true;$('filename').textContent=file.name;$('submit').disabled=false;$('output').hidden=true;$('empty').hidden=false;status('Ready to search.');}

@@ -51,7 +51,10 @@ class SearchUITests(unittest.TestCase):
         self.assertEqual(len(a['models'][0]['rankings']), 5)
         self.app.detector.detect.assert_not_called()
         for j, trial in enumerate(a['models'][0]['rankings']):
-            self.assertTrue(all(r['source']['file']==f'random_{j}.png' for r in trial['results']))
+            for result in trial['results']:
+                self.assertEqual(result['source']['file'], f'random_{j}.png')
+                self.assertEqual(len(result['source_scores']), 1)
+                self.assertEqual(result['score'], result['source_scores'][0]['score'])
 
     def test_yolo_without_detections_falls_back_to_full(self):
         self.app.detector.detect.return_value = []
@@ -76,5 +79,4 @@ class StartupTests(unittest.TestCase):
             main()
         self.assertEqual(error.exception.code, 1)
         self.assertIn('http://127.0.0.1:8000', output.getvalue())
-        self.assertIn('--port 8001', output.getvalue())
         self.assertNotIn('Traceback', output.getvalue())
