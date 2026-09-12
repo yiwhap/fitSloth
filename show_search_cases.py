@@ -63,7 +63,7 @@ def render_case(query, dataset, destination, category):
 
 
 def export_cases(results_path, dataset, out, all_failures=False, failure_queries=None):
-    rows = json.loads(results_path.read_text())
+    rows = json.loads(results_path.read_text(encoding="utf-8"))
     selected = select_cases(rows, all_failures, failure_queries)
     out.mkdir(parents=True, exist_ok=True)
     report = [f"# CLIP: three best and {len(selected['failure'])} failure cases", '',
@@ -93,8 +93,8 @@ def export_cases(results_path, dataset, out, all_failures=False, failure_queries
     report += ['## Interpretation', '',
                'Wrong-label results can still look similar. Inspect composition, visible food, '
                'and label quality before proposing a cause; these images alone cannot prove what the model attends to.', '']
-    (out / 'report.md').write_text('\n'.join(report))
-    (out / 'cases.json').write_text(json.dumps(selected, indent=2) + '\n')
+    (out / 'report.md').write_text('\n'.join(report), encoding="utf-8")
+    (out / 'cases.json').write_text(json.dumps(selected, indent=2) + '\n', encoding="utf-8")
     cards = []
     for q in selected['failure']:
         name = html.escape(f"failure_{q['query_id']}.png", quote=True)
@@ -107,7 +107,7 @@ def export_cases(results_path, dataset, out, all_failures=False, failure_queries
         f"<h1>{len(cards)} top-1 failures out of {len(rows)} queries</h1>"
         '<p>The left image is the query; the next five are ranked results. '
         'Correctness uses supplied dish labels. Red means wrong label, green means a match.</p>'
-        + ''.join(cards))
+        + ''.join(cards), encoding="utf-8")
     return selected
 
 

@@ -19,7 +19,7 @@ CACHE = ROOT / ".cache/huggingface"
 
 
 def catalog(dataset):
-    with (dataset / "catalog.csv").open(newline="") as f:
+    with (dataset / "catalog.csv").open(newline="", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
     if not rows or len({r["image_id"] for r in rows}) != len(rows):
         raise ValueError("Catalog must contain unique image IDs and at least one image")

@@ -21,7 +21,7 @@ Values below are **mean ± sample SD across five training seeds** with fixed spl
 | **Fine-tuned CLIP** | **Full image + YOLO crops** | **0.950667 ± 0.006412** | **0.047533 ± 0.000321** | **0.949800 ± 0.008211** |
 
 
-Inspect the [visual comparison for preselected seed 0](outputs/seed_study/comparison/index.html).
+Inspect the [summary CSV](outputs/seed_study/summary.csv) or [per-seed results](outputs/seed_study/summary.json). The reproduction command generates the visual comparison at `outputs/reproduced/comparison/index.html` (preselected seed 0).
 
 ## Methodology
 
@@ -33,14 +33,15 @@ Inspect the [visual comparison for preselected seed 0](outputs/seed_study/compar
 
 ## Try the UI
 
-With uv, the dataset, and saved model artifacts available, run from the repository root on **macOS or Windows PowerShell**:
+Install uv using [Setup](#setup-and-reproduction), then run these commands from the repository root on **macOS Intel/Apple Silicon, Windows x64 (PowerShell), or Linux x64**:
 
 ```bash
 uv sync --locked --python 3.11
+uv run setup_project.py
 uv run search_ui.py --open
 ```
 
-This starts the backend and opens the UI at [localhost:8000](http://127.0.0.1:8000). Upload a photo to inspect matches, cosine scores, and winning crops. Keep the terminal running; stop with Ctrl+C. For missing dependencies or artifacts, see [Setup and reproduction](#setup-and-reproduction).
+`setup_project.py` prepares missing data/indexes and checks both encoders plus YOLO using a real query. Existing complete artifacts are reused; a fresh checkout requires internet and time to download data/models and train. The final command starts the backend and opens the UI at [localhost:8000](http://127.0.0.1:8000). Upload a photo to inspect matches, cosine scores, and winning crops. Keep the terminal running; stop with Ctrl+C. For missing dependencies or artifacts, see [Setup and reproduction](#setup-and-reproduction).
 
 The UI uses the original seed-42 checkpoint; the linked visual report uses preselected seed 0. The table summarizes all five training seeds.
 
@@ -70,9 +71,9 @@ The 60 queries were inspected during development, so results are not an untouche
 
 ## Setup and reproduction
 
-Python 3.11, CPU, and uv are required. Run from the repository root. Tested on macOS Apple Silicon; Windows PowerShell commands are provided but not tested on Windows. Initial downloads require internet access.
+Use Python 3.11 on a 64-bit machine; no GPU is required. A fresh-environment inference check was run on macOS Apple Silicon. Dependency resolution was also checked for Windows x64, macOS Intel, and Linux x64; native inference on those systems has not yet been tested. Intel Macs use PyTorch 2.2.2; other targets retain 2.8.0. Initial downloads require internet access.
 
-Install uv if needed. **macOS:**
+Install uv if needed. **macOS / Linux:**
 
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -87,36 +88,38 @@ winget install --id=astral-sh.uv -e
 
 
 
-### Prepare missing data and models
+### Linux system libraries
 
-**Without saved data or models**, prepare them first:
+On Ubuntu/Debian without desktop libraries, install OpenCV's system dependencies before the quickstart:
 
 ```bash
-uv python install 3.11
-uv sync --locked --python 3.11
-uv run prepare_data.py
-uv run image_search.py build
-uv run finetune_clip.py
-uv run search_ui.py --open
+sudo apt-get update
+sudo apt-get install -y libgl1 libglib2.0-0
 ```
 
-Skip completed steps. `prepare_data.py` and its output are unchanged. For a baseline CLI search:
+### Verify supplied artifacts
+
+The quickstart works with supplied artifacts or a fresh checkout. To check existing artifacts without preparing data or training:
+
+```bash
+uv run setup_project.py --check
+```
+
+An incomplete existing dataset is reported without overwriting it. `prepare_data.py` and its output remain unchanged. For a baseline CLI search:
 
 ```bash
 uv run image_search.py search food_search_dataset/queries/q_pho_00.jpg --top-k 5
 ```
-
-
 
 ### Reproduce the experiments
 
 Run all five training seeds and eight pipelines:
 
 ```bash
-uv run train_seed_study.py
+uv run train_seed_study.py --out outputs/reproduced
 ```
 
-Results go to `outputs/seed_study/`. Use an unused `--out` for new training, or add `--evaluate-only` to re-evaluate saved checkpoints and crops.
+New results and the visual report go to `outputs/reproduced/`; submitted summaries stay in `outputs/seed_study/`. Choose an unused `--out` for another training run, or use `--evaluate-only` with an existing complete run.
 
 ## Code and artifacts
 
@@ -124,6 +127,7 @@ Results go to `outputs/seed_study/`. Use an unused `--out` for new training, or 
 | File                                         | Role                                    |
 | -------------------------------------------- | --------------------------------------- |
 | `prepare_data.py`                            | Supplied dataset preparation            |
+| `setup_project.py`                           | Prepare missing assets and verify inference |
 | `image_search.py`                            | CLIP embeddings and exact NumPy search  |
 | `finetune_clip.py`                           | Projection training and validation      |
 | `train_seed_study.py`                        | Five training seeds, mean and sample SD |
@@ -135,7 +139,7 @@ Results go to `outputs/seed_study/`. Use an unused `--out` for new training, or 
 
 Run tests with `uv run python -m unittest discover -s tests -v`.
 
-The UI needs `food_search_dataset/`, `outputs/catalog.npz`, and `outputs/tuned/`. Keep `projection.npy` beside the trained index and retain `transform.npy` for comparisons. The five-seed results are in `outputs/seed_study/`; baseline failure examples are in `outputs/cases/`. Dataset and outputs are ignored by Git: include them separately or regenerate them. Report image links require these artifacts; absolute paths may need regeneration on another machine.
+The UI needs `food_search_dataset/`, `outputs/catalog.npz`, and `outputs/tuned/`. Keep `projection.npy` beside the trained index and retain `transform.npy` for comparisons. The five-seed results are in `outputs/seed_study/`; baseline failure examples are in `outputs/cases/`. Submit the Git repository. Git includes the three failure images and compact result summaries. The dataset, model indexes, and full generated reports are excluded and regenerated using `setup_project.py` and the experiment commands above. Pretrained weights download on first use. Include the required 3–5 minute screen recording, showing at least one failed query, with the submission. Report image links require these artifacts; CLI search and case export resolve image filenames against the local dataset.
 
 ## AI assistance
 

@@ -1,7 +1,16 @@
 .cache/
 .venv/
 __pycache__/
-outputs/
+outputs/*
+!outputs/cases/
+outputs/cases/*
+!outputs/cases/failure_q_chocolate_cake_00.png
+!outputs/cases/failure_q_sushi_00.png
+!outputs/cases/failure_q_caesar_salad_02.png
+!outputs/seed_study/
+outputs/seed_study/*
+!outputs/seed_study/summary.csv
+!outputs/seed_study/summary.json
 food_search_dataset/
 
 .DS_Store

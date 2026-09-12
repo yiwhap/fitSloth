@@ -52,7 +52,7 @@ class SearchApp:
         self.detector = None
         # Serialize model access and keep loaded models reusable between requests.
         self.lock = threading.Lock()
-        with (DATASET / 'queries.csv').open() as stream:
+        with (DATASET / 'queries.csv').open(encoding="utf-8") as stream:
             self.examples = {r['filename']: r for r in csv.DictReader(stream)}
 
     def search(self, raw, model, method, seed=None):

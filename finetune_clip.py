@@ -18,7 +18,7 @@ from image_search import DATASET, INDEX, ROOT, Encoder, catalog, fingerprint, no
 
 
 def dump(path, value):
-    path.write_text(json.dumps(value, indent=2) + '\n')
+    path.write_text(json.dumps(value, indent=2) + '\n', encoding="utf-8")
 
 
 def duplicate_groups(paths, distance=4):
@@ -117,7 +117,7 @@ def train(args):
     if ('projection' in metadata or metadata['rows'] != rows or
             metadata['fingerprint'] != fingerprint(args.dataset, rows)):
         raise ValueError('Need an unchanged original CLIP catalog index')
-    with (args.dataset / 'queries.csv').open() as f:
+    with (args.dataset / 'queries.csv').open(encoding="utf-8") as f:
         queries = list(csv.DictReader(f))
     args.out.mkdir(parents=True)
     started = time.monotonic()
@@ -190,7 +190,7 @@ def train(args):
     np.savez_compressed(args.out / 'catalog.npz', vectors=updated, metadata=json.dumps(tuned_metadata))
     del encoder
     if getattr(args, 'skip_evaluation', False):
-        print('Checkpoint saved; evaluation will be performed by the seed study.', flush=True)
+        print('Checkpoint saved; final evaluation skipped.', flush=True)
         return
     print('Checkpoint selected. Running final held-out evaluation for both models.', flush=True)
     baseline_summary = evaluate(args.dataset, args.index, args.out / 'baseline')
@@ -198,8 +198,8 @@ def train(args):
     comparison = {m: {'baseline': baseline_summary[m], 'finetuned': tuned_summary[m],
                       'delta': tuned_summary[m] - baseline_summary[m]} for m in METRICS}
     dump(args.out / 'comparison.json', comparison)
-    a = json.loads((args.out / 'baseline/results.json').read_text())
-    b = json.loads((args.out / 'finetuned/results.json').read_text())
+    a = json.loads((args.out / 'baseline/results.json').read_text(encoding="utf-8"))
+    b = json.loads((args.out / 'finetuned/results.json').read_text(encoding="utf-8"))
     changes = [{ 'query_id': q['query_id'], 'true_label': q['true_label'],
                  **{m: r[m] - q[m] for m in METRICS}} for q, r in zip(a, b)]
     dump(args.out / 'per_query_changes.json', changes)
@@ -214,7 +214,7 @@ def train(args):
         '- Only a constrained image projection is trained. The vision backbone and text encoder are not fine-tuned; text alignment is not evaluated.',
         '- Recall@5 uses the number of matching catalog images (100), so its maximum is 0.05.',
         '- Results are one seed on a small, known-category dataset; improvement is not guaranteed on new foods.', '']
-    (args.out / 'comparison.md').write_text('\n'.join(lines))
+    (args.out / 'comparison.md').write_text('\n'.join(lines), encoding="utf-8")
     print(json.dumps(comparison, indent=2), flush=True)
 
 

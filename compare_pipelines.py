@@ -17,7 +17,7 @@ from image_search import DATASET, INDEX, ROOT, ImageSearch, normalize, save_prev
 
 
 def dump(path, value):
-    path.write_text(json.dumps(value, indent=2) + '\n')
+    path.write_text(json.dumps(value, indent=2) + '\n', encoding="utf-8")
 
 
 def sample_boxes(size, count, rng):
@@ -92,7 +92,7 @@ def prepare(args, queries):
         query_hash.update(p.read_bytes())
     manifest_path = args.out / 'manifest.json'
     if args.resume:
-        manifest = json.loads(manifest_path.read_text())
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         if (manifest['query_hash'] != query_hash.hexdigest() or manifest['random_trials'] != args.random_trials
                 or manifest['detector'] != DETECTOR or manifest.get('classes') != sorted(FOOD_CLASSES) or manifest['query_ids'] != [q['query_id'] for q in queries]):
             raise ValueError('Resume configuration/data changed; start a new output directory')
@@ -234,7 +234,7 @@ def report(args, queries, manifest, records):
         'yolo_full_image_fallbacks':sum(c['fallback'] for c in manifest['cases'].values())})
     for filename, rows, fields in [('summary.csv',summary,['pipeline',*METRICS]),
         ('per_query.csv',records,['query_id','true_label','model','method',*METRICS])]:
-        with (args.out / filename).open('w',newline='') as f:
+        with (args.out / filename).open('w',newline='', encoding="utf-8") as f:
             writer=csv.DictWriter(f,fieldnames=fields,extrasaction='ignore');writer.writeheader();writer.writerows(rows)
     table='<table><tr><th>Pipeline</th>'+''.join(f'<th>{m}</th>' for m in METRICS)+'</tr>'
     for r in summary:
@@ -272,9 +272,9 @@ def report(args, queries, manifest, records):
                     doc+=f'<p>Region {region["region"]+1}: {html.escape(region["detection"]["label"])}</p><img loading="lazy" src="{qid}/{model}_region_{region["region"]}.png">'
             doc+='</details>'
         doc+='</section>'
-    (args.out/'index.html').write_text(doc+'</body></html>')
+    (args.out/'index.html').write_text(doc+'</body></html>', encoding="utf-8")
     (args.out/'report.md').write_text('# Eight-way comparison\n\n'+protocol+'\n\n| Pipeline | Precision@5 | Recall@5 | NDCG@5 |\n|---|---:|---:|---:|\n'+
-        '\n'.join('| '+r['pipeline']+' | '+' | '.join(f'{r[m]:.6f}' for m in METRICS)+' |' for r in summary)+'\n')
+        '\n'.join('| '+r['pipeline']+' | '+' | '.join(f'{r[m]:.6f}' for m in METRICS)+' |' for r in summary)+'\n', encoding="utf-8")
     print(json.dumps(summary,indent=2),flush=True)
 
 
@@ -289,7 +289,7 @@ def main():
     p.add_argument('--resume',action='store_true',help='Reuse completed detections and crops in this output directory')
     args=p.parse_args()
     if args.random_trials<1:p.error('--random-trials must be positive')
-    with (args.dataset/'queries.csv').open() as f:queries=list(csv.DictReader(f))
+    with (args.dataset/'queries.csv').open(encoding="utf-8") as f:queries=list(csv.DictReader(f))
     manifest=prepare(args,queries)
     records=evaluate_models(args,queries,manifest)
     report(args,queries,manifest,records)

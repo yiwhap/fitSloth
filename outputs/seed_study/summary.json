@@ -1,0 +1,407 @@
+{
+  "train_seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "split_seed": 42,
+  "crop_seed": 42,
+  "query_count": 60,
+  "sd_ddof": 1,
+  "pipelines": [
+    {
+      "pipeline": "1. Baseline: full image",
+      "precision@5": {
+        "mean": 0.7966666666666666,
+        "sd": 0.0
+      },
+      "recall@5": {
+        "mean": 0.039833333333333325,
+        "sd": 0.0
+      },
+      "ndcg@5": {
+        "mean": 0.7915879570047001,
+        "sd": 0.0
+      }
+    },
+    {
+      "pipeline": "2. Baseline: random crop",
+      "precision@5": {
+        "mean": 0.7613333333333334,
+        "sd": 0.0
+      },
+      "recall@5": {
+        "mean": 0.038066666666666665,
+        "sd": 0.0
+      },
+      "ndcg@5": {
+        "mean": 0.7664959178010197,
+        "sd": 0.0
+      }
+    },
+    {
+      "pipeline": "3. Baseline: YOLO crops",
+      "precision@5": {
+        "mean": 0.7133333333333333,
+        "sd": 0.0
+      },
+      "recall@5": {
+        "mean": 0.03566666666666666,
+        "sd": 0.0
+      },
+      "ndcg@5": {
+        "mean": 0.7153672203323749,
+        "sd": 0.0
+      }
+    },
+    {
+      "pipeline": "4. Baseline: full image + YOLO crops",
+      "precision@5": {
+        "mean": 0.8166666666666667,
+        "sd": 0.0
+      },
+      "recall@5": {
+        "mean": 0.04083333333333332,
+        "sd": 0.0
+      },
+      "ndcg@5": {
+        "mean": 0.8184046588539247,
+        "sd": 1.2412670766236366e-16
+      }
+    },
+    {
+      "pipeline": "5. Fine-tune: full image",
+      "precision@5": {
+        "mean": 0.9299999999999999,
+        "sd": 0.0066666666666667235
+      },
+      "recall@5": {
+        "mean": 0.046499999999999986,
+        "sd": 0.0003333333333333348
+      },
+      "ndcg@5": {
+        "mean": 0.9263484776192416,
+        "sd": 0.00934476814349234
+      }
+    },
+    {
+      "pipeline": "6. Fine-tune: random crop",
+      "precision@5": {
+        "mean": 0.8745333333333333,
+        "sd": 0.006278711828251242
+      },
+      "recall@5": {
+        "mean": 0.04372666666666666,
+        "sd": 0.0003139355914125609
+      },
+      "ndcg@5": {
+        "mean": 0.8746872956689662,
+        "sd": 0.005227382034977878
+      }
+    },
+    {
+      "pipeline": "7. Fine-tune: YOLO crops",
+      "precision@5": {
+        "mean": 0.804,
+        "sd": 0.00434613493680176
+      },
+      "recall@5": {
+        "mean": 0.04019999999999999,
+        "sd": 0.00021730674684008645
+      },
+      "ndcg@5": {
+        "mean": 0.8052354236194299,
+        "sd": 0.004342896699231866
+      }
+    },
+    {
+      "pipeline": "8. Fine-tune: full image + YOLO crops",
+      "precision@5": {
+        "mean": 0.9506666666666665,
+        "sd": 0.006411794687223808
+      },
+      "recall@5": {
+        "mean": 0.04753333333333332,
+        "sd": 0.0003205897343611868
+      },
+      "ndcg@5": {
+        "mean": 0.9498003918049769,
+        "sd": 0.008211310318190444
+      }
+    }
+  ],
+  "runs": [
+    {
+      "train_seed": 0,
+      "best_epoch": 9,
+      "pipelines": [
+        {
+          "pipeline": "1. Baseline: full image",
+          "precision@5": 0.7966666666666666,
+          "recall@5": 0.039833333333333325,
+          "ndcg@5": 0.7915879570047001
+        },
+        {
+          "pipeline": "2. Baseline: random crop",
+          "precision@5": 0.7613333333333334,
+          "recall@5": 0.038066666666666665,
+          "ndcg@5": 0.7664959178010197
+        },
+        {
+          "pipeline": "3. Baseline: YOLO crops",
+          "precision@5": 0.7133333333333333,
+          "recall@5": 0.03566666666666666,
+          "ndcg@5": 0.7153672203323749
+        },
+        {
+          "pipeline": "4. Baseline: full image + YOLO crops",
+          "precision@5": 0.8166666666666667,
+          "recall@5": 0.04083333333333332,
+          "ndcg@5": 0.8184046588539245
+        },
+        {
+          "pipeline": "5. Fine-tune: full image",
+          "precision@5": 0.9233333333333333,
+          "recall@5": 0.046166666666666654,
+          "ndcg@5": 0.9157021825045644
+        },
+        {
+          "pipeline": "6. Fine-tune: random crop",
+          "precision@5": 0.87,
+          "recall@5": 0.04349999999999999,
+          "ndcg@5": 0.8718813743132078
+        },
+        {
+          "pipeline": "7. Fine-tune: YOLO crops",
+          "precision@5": 0.8,
+          "recall@5": 0.03999999999999999,
+          "ndcg@5": 0.8006395837520744
+        },
+        {
+          "pipeline": "8. Fine-tune: full image + YOLO crops",
+          "precision@5": 0.9533333333333334,
+          "recall@5": 0.047666666666666656,
+          "ndcg@5": 0.9480812487437766
+        }
+      ]
+    },
+    {
+      "train_seed": 1,
+      "best_epoch": 8,
+      "pipelines": [
+        {
+          "pipeline": "1. Baseline: full image",
+          "precision@5": 0.7966666666666666,
+          "recall@5": 0.039833333333333325,
+          "ndcg@5": 0.7915879570047001
+        },
+        {
+          "pipeline": "2. Baseline: random crop",
+          "precision@5": 0.7613333333333334,
+          "recall@5": 0.038066666666666665,
+          "ndcg@5": 0.7664959178010197
+        },
+        {
+          "pipeline": "3. Baseline: YOLO crops",
+          "precision@5": 0.7133333333333333,
+          "recall@5": 0.03566666666666666,
+          "ndcg@5": 0.7153672203323749
+        },
+        {
+          "pipeline": "4. Baseline: full image + YOLO crops",
+          "precision@5": 0.8166666666666667,
+          "recall@5": 0.04083333333333332,
+          "ndcg@5": 0.8184046588539245
+        },
+        {
+          "pipeline": "5. Fine-tune: full image",
+          "precision@5": 0.9333333333333333,
+          "recall@5": 0.046666666666666655,
+          "ndcg@5": 0.9297902353327904
+        },
+        {
+          "pipeline": "6. Fine-tune: random crop",
+          "precision@5": 0.8773333333333332,
+          "recall@5": 0.04386666666666665,
+          "ndcg@5": 0.8773350786869536
+        },
+        {
+          "pipeline": "7. Fine-tune: YOLO crops",
+          "precision@5": 0.8066666666666666,
+          "recall@5": 0.04033333333333332,
+          "ndcg@5": 0.8063927727895223
+        },
+        {
+          "pipeline": "8. Fine-tune: full image + YOLO crops",
+          "precision@5": 0.95,
+          "recall@5": 0.04749999999999999,
+          "ndcg@5": 0.9520862323423182
+        }
+      ]
+    },
+    {
+      "train_seed": 2,
+      "best_epoch": 8,
+      "pipelines": [
+        {
+          "pipeline": "1. Baseline: full image",
+          "precision@5": 0.7966666666666666,
+          "recall@5": 0.039833333333333325,
+          "ndcg@5": 0.7915879570047001
+        },
+        {
+          "pipeline": "2. Baseline: random crop",
+          "precision@5": 0.7613333333333334,
+          "recall@5": 0.038066666666666665,
+          "ndcg@5": 0.7664959178010197
+        },
+        {
+          "pipeline": "3. Baseline: YOLO crops",
+          "precision@5": 0.7133333333333333,
+          "recall@5": 0.03566666666666666,
+          "ndcg@5": 0.7153672203323749
+        },
+        {
+          "pipeline": "4. Baseline: full image + YOLO crops",
+          "precision@5": 0.8166666666666667,
+          "recall@5": 0.04083333333333332,
+          "ndcg@5": 0.8184046588539245
+        },
+        {
+          "pipeline": "5. Fine-tune: full image",
+          "precision@5": 0.9266666666666665,
+          "recall@5": 0.046333333333333324,
+          "ndcg@5": 0.9214553715420123
+        },
+        {
+          "pipeline": "6. Fine-tune: random crop",
+          "precision@5": 0.8746666666666666,
+          "recall@5": 0.04373333333333332,
+          "ndcg@5": 0.8738557674636241
+        },
+        {
+          "pipeline": "7. Fine-tune: YOLO crops",
+          "precision@5": 0.8033333333333333,
+          "recall@5": 0.040166666666666656,
+          "ndcg@5": 0.8052608075413252
+        },
+        {
+          "pipeline": "8. Fine-tune: full image + YOLO crops",
+          "precision@5": 0.9433333333333334,
+          "recall@5": 0.047166666666666655,
+          "ndcg@5": 0.941487438055146
+        }
+      ]
+    },
+    {
+      "train_seed": 3,
+      "best_epoch": 17,
+      "pipelines": [
+        {
+          "pipeline": "1. Baseline: full image",
+          "precision@5": 0.7966666666666666,
+          "recall@5": 0.039833333333333325,
+          "ndcg@5": 0.7915879570047001
+        },
+        {
+          "pipeline": "2. Baseline: random crop",
+          "precision@5": 0.7613333333333334,
+          "recall@5": 0.038066666666666665,
+          "ndcg@5": 0.7664959178010197
+        },
+        {
+          "pipeline": "3. Baseline: YOLO crops",
+          "precision@5": 0.7133333333333333,
+          "recall@5": 0.03566666666666666,
+          "ndcg@5": 0.7153672203323749
+        },
+        {
+          "pipeline": "4. Baseline: full image + YOLO crops",
+          "precision@5": 0.8166666666666667,
+          "recall@5": 0.04083333333333332,
+          "ndcg@5": 0.8184046588539245
+        },
+        {
+          "pipeline": "5. Fine-tune: full image",
+          "precision@5": 0.9400000000000001,
+          "recall@5": 0.04699999999999999,
+          "ndcg@5": 0.9403656898749301
+        },
+        {
+          "pipeline": "6. Fine-tune: random crop",
+          "precision@5": 0.8833333333333333,
+          "recall@5": 0.04416666666666666,
+          "ndcg@5": 0.8820099024833342
+        },
+        {
+          "pipeline": "7. Fine-tune: YOLO crops",
+          "precision@5": 0.81,
+          "recall@5": 0.04049999999999999,
+          "ndcg@5": 0.8117977216719098
+        },
+        {
+          "pipeline": "8. Fine-tune: full image + YOLO crops",
+          "precision@5": 0.9600000000000001,
+          "recall@5": 0.04799999999999998,
+          "ndcg@5": 0.9626850266294903
+        }
+      ]
+    },
+    {
+      "train_seed": 4,
+      "best_epoch": 9,
+      "pipelines": [
+        {
+          "pipeline": "1. Baseline: full image",
+          "precision@5": 0.7966666666666666,
+          "recall@5": 0.039833333333333325,
+          "ndcg@5": 0.7915879570047001
+        },
+        {
+          "pipeline": "2. Baseline: random crop",
+          "precision@5": 0.7613333333333334,
+          "recall@5": 0.038066666666666665,
+          "ndcg@5": 0.7664959178010197
+        },
+        {
+          "pipeline": "3. Baseline: YOLO crops",
+          "precision@5": 0.7133333333333333,
+          "recall@5": 0.03566666666666666,
+          "ndcg@5": 0.7153672203323749
+        },
+        {
+          "pipeline": "4. Baseline: full image + YOLO crops",
+          "precision@5": 0.8166666666666667,
+          "recall@5": 0.04083333333333332,
+          "ndcg@5": 0.8184046588539245
+        },
+        {
+          "pipeline": "5. Fine-tune: full image",
+          "precision@5": 0.9266666666666665,
+          "recall@5": 0.046333333333333324,
+          "ndcg@5": 0.924428908841911
+        },
+        {
+          "pipeline": "6. Fine-tune: random crop",
+          "precision@5": 0.8673333333333333,
+          "recall@5": 0.043366666666666664,
+          "ndcg@5": 0.868354355397711
+        },
+        {
+          "pipeline": "7. Fine-tune: YOLO crops",
+          "precision@5": 0.8,
+          "recall@5": 0.039999999999999994,
+          "ndcg@5": 0.8020862323423181
+        },
+        {
+          "pipeline": "8. Fine-tune: full image + YOLO crops",
+          "precision@5": 0.9466666666666667,
+          "recall@5": 0.04733333333333332,
+          "ndcg@5": 0.944662013254153
+        }
+      ]
+    }
+  ]
+}
